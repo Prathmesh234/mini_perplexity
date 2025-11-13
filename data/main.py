@@ -33,6 +33,7 @@ def main():
     avg_file_mb = _str_to_int(os.getenv("AVG_FILE_MB"), 100)
     seed_env = os.getenv("SEED")
     seed = int(seed_env) if seed_env is not None and seed_env.strip() != "" else None
+    min_english_files = _str_to_int(os.getenv("MIN_ENGLISH_FILES"), 0)
 
     summary = download_cc_wet_to_azure(
         azure_connection_string=azure_conn_str,
@@ -41,6 +42,7 @@ def main():
         target_mb=target_mb,
         avg_file_mb=avg_file_mb,
         seed=seed,
+        min_english_files=min_english_files,
     )
     print(summary)
 

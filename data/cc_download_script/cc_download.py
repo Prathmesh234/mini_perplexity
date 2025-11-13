@@ -17,12 +17,14 @@ def download_cc_wet_to_azure(
     avg_file_mb: int = 100,
     seed: Optional[int] = None,
     request_timeout_s: int = 60,
+    min_english_files: int = 0,
 ) -> Dict[str, int]:
     """
     Download a subset of Common Crawl WET files and upload them to Azure Blob Storage.
 
     - Chooses approximately target_mb total by sampling paths with an assumed avg_file_mb per file.
     - Skips blobs that already exist.
+    - Optionally keeps downloading until min_english_files are stored.
 
     Returns a summary dict with counts: downloaded, skipped_existing, attempted.
     """
@@ -49,13 +51,24 @@ def download_cc_wet_to_azure(
     files_to_download = min(files_to_download, len(paths))
 
     rng = random.Random(seed) if seed is not None else random
-    subset = rng.sample(paths, files_to_download)
+
+    if min_english_files > 0:
+        subset = paths[:]
+        rng.shuffle(subset)
+        attempt_limit = len(subset)
+    else:
+        subset = rng.sample(paths, files_to_download)
+        attempt_limit = len(subset)
 
     downloaded = 0
     skipped_existing = 0
     skipped_language = 0
+    attempted = 0
 
-    for path in tqdm(subset, desc="Uploading to Azure"):
+    for path in tqdm(subset, desc="Uploading to Azure", total=attempt_limit):
+        if min_english_files > 0 and downloaded >= min_english_files:
+            break
+        attempted += 1
         file_url = f"https://data.commoncrawl.org/{path}"
         blob_name = path.split("/")[-1]
 
@@ -79,5 +92,5 @@ def download_cc_wet_to_azure(
         "downloaded": downloaded,
         "skipped_existing": skipped_existing,
         "skipped_language": skipped_language,
-        "attempted": files_to_download,
+        "attempted": attempted,
     }

@@ -6,6 +6,8 @@ import requests
 from tqdm import tqdm
 from azure.storage.blob import BlobServiceClient
 
+from cc_download_script.filter import is_english_wet_file
+
 
 def download_cc_wet_to_azure(
     azure_connection_string: str,
@@ -51,6 +53,7 @@ def download_cc_wet_to_azure(
 
     downloaded = 0
     skipped_existing = 0
+    skipped_language = 0
 
     for path in tqdm(subset, desc="Uploading to Azure"):
         file_url = f"https://data.commoncrawl.org/{path}"
@@ -63,7 +66,18 @@ def download_cc_wet_to_azure(
 
         with requests.get(file_url, stream=True, timeout=max(60, request_timeout_s * 5)) as r:
             r.raise_for_status()
-            blob_client.upload_blob(r.raw, overwrite=True)
-            downloaded += 1
+            payload = r.content
 
-    return {"downloaded": downloaded, "skipped_existing": skipped_existing, "attempted": files_to_download}
+        if not is_english_wet_file(payload):
+            skipped_language += 1
+            continue
+
+        blob_client.upload_blob(io.BytesIO(payload), overwrite=True)
+        downloaded += 1
+
+    return {
+        "downloaded": downloaded,
+        "skipped_existing": skipped_existing,
+        "skipped_language": skipped_language,
+        "attempted": files_to_download,
+    }

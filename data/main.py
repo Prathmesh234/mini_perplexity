@@ -1,8 +1,10 @@
 import os
 from pathlib import Path
 from typing import Optional
+
 from dotenv import load_dotenv
-from cc_download_script.cc_download import download_cc_wet_to_azure
+
+from fineweb import stream_fineweb_to_azure
 
 
 def _str_to_int(value: Optional[str], default: int) -> int:
@@ -20,29 +22,30 @@ def main():
     if env_path.exists():
         load_dotenv(dotenv_path=env_path, override=False)
 
-    azure_conn_str = os.getenv("AZURE_CONN_STR", "")
+    azure_conn_str = os.getenv("AZURE_CONN_STR") or os.getenv(
+        "AZURE_STORAGE_CONNECTION_STRING", ""
+    )
     if not azure_conn_str:
         raise RuntimeError("AZURE_CONN_STR env var is required")
 
-    container_name = os.getenv("CONTAINER_NAME", "commoncrawl-wet")
-    index_url = os.getenv(
-        "INDEX_URL",
-        "https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-40/wet.paths.gz",
-    )
-    target_mb = _str_to_int(os.getenv("TARGET_MB"), 5 * 1024)
-    avg_file_mb = _str_to_int(os.getenv("AVG_FILE_MB"), 100)
-    seed_env = os.getenv("SEED")
-    seed = int(seed_env) if seed_env is not None and seed_env.strip() != "" else None
-    min_english_files = _str_to_int(os.getenv("MIN_ENGLISH_FILES"), 0)
+    container_name = os.getenv("CONTAINER_NAME", "fineweb-raw")
+    dataset_id = os.getenv("DATASET_ID", "HuggingFaceFW/fineweb")
+    dataset_split = os.getenv("DATASET_SPLIT", "train")
+    chunk_size = _str_to_int(os.getenv("CHUNK_SIZE"), 10_000)
+    blob_prefix = os.getenv("BLOB_PREFIX", f"fineweb/{dataset_split}")
+    max_chunks_value = _str_to_int(os.getenv("MAX_CHUNKS"), 0)
+    max_chunks = max_chunks_value if max_chunks_value > 0 else None
+    upload_retries = _str_to_int(os.getenv("UPLOAD_RETRIES"), 3)
 
-    summary = download_cc_wet_to_azure(
+    summary = stream_fineweb_to_azure(
         azure_connection_string=azure_conn_str,
         container_name=container_name,
-        index_url=index_url,
-        target_mb=target_mb,
-        avg_file_mb=avg_file_mb,
-        seed=seed,
-        min_english_files=min_english_files,
+        dataset_id=dataset_id,
+        split=dataset_split,
+        chunk_size=chunk_size,
+        blob_prefix=blob_prefix,
+        max_chunks=max_chunks,
+        upload_retries=max(upload_retries, 1),
     )
     print(summary)
 

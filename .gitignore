@@ -18,3 +18,108 @@ models/
 **/transformers_cache/
 **/huggingface_cache/
 **/.cache/huggingface/
+
+# Python specific
+*.py[cod]
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments and package managers
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Testing and coverage
+.tox/
+.coverage
+.pytest_cache/
+htmlcov/
+.hypothesis/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Azure credentials
+*.pem
+*.key
+*.crt
+
+# Service specific caches
+services/embedding/models/
+services/indexer/cache/
+cache/
+embeddings/
+vectors/
+*.npy
+*.pkl
+*.pickle
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Process and runtime files
+*.pid
+*.lock
+.uvicorn/
+
+# Service-specific logs and data
+services/*/logs/
+services/*/data/
+services/*/cache/
+*.jsonl
+*.gz.processing
+*.processing
+
+# Azure and cloud specific
+azure-credentials/
+.azure/
+credentials.json
+service-account.json
+
+# Large dataset files
+fineweb/
+commoncrawl/
+*.wet
+*.wet.gz
+*.warc
+*.warc.gz

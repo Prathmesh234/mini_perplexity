@@ -10,4 +10,5 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "pydantic",
+    "azure-servicebus>=7.14.3",
 ]

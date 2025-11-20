@@ -1,7 +1,7 @@
 import os
 import json
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from dotenv import load_dotenv
 from azure.servicebus import (
@@ -46,13 +46,23 @@ def _deserialize_message_body(message: ServiceBusReceivedMessage) -> Optional[Di
             return None
 
 
-def get_ingestion_message(
+def receive_all_embeddings(
     subscription_name: str = "ingestion-sub",
+    max_messages: int = 3000,
+    batch_size: int = 50,
     max_wait_time: int = 5,
-) -> Optional[EmbeddingChunk]:
-    """Retrieve a single message from the ingestion topic."""
+) -> List[EmbeddingChunk]:
+    """
+    Retrieve up to `max_messages` embeddings from the ingestion topic.
+
+    Messages that fail schema validation are dead-lettered.
+    """
+    if max_messages <= 0:
+        return []
+
     config = load_env_config()
     servicebus_client = ServiceBusClient.from_connection_string(config["service_bus_conn_str"])
+    collected: List[EmbeddingChunk] = []
 
     try:
         receiver: ServiceBusReceiver = servicebus_client.get_subscription_receiver(
@@ -62,31 +72,36 @@ def get_ingestion_message(
         )
 
         with receiver:
-            received_msgs = receiver.receive_messages(
-                max_message_count=1,
-                max_wait_time=max_wait_time,
-            )
+            while len(collected) < max_messages:
+                remaining = max_messages - len(collected)
+                message_batch = receiver.receive_messages(
+                    max_message_count=min(batch_size, remaining),
+                    max_wait_time=max_wait_time,
+                )
 
-            if not received_msgs:
-                return None
+                if not message_batch:
+                    break
 
-            msg = received_msgs[0]
-            payload = _deserialize_message_body(msg)
-            if payload is None:
-                receiver.dead_letter_message(msg, reason="Invalid JSON")
-                return None
+                for message in message_batch:
+                    payload = _deserialize_message_body(message)
+                    if payload is None:
+                        receiver.dead_letter_message(message, reason="Invalid JSON")
+                        continue
 
-            try:
-                chunk = EmbeddingChunk.model_validate(payload)
-                receiver.complete_message(msg)
-                return chunk
-            except Exception:
-                receiver.dead_letter_message(msg, reason="Schema validation failed")
-                return None
+                    try:
+                        chunk = EmbeddingChunk.model_validate(payload)
+                        collected.append(chunk)
+                        receiver.complete_message(message)
+                    except Exception:
+                        receiver.dead_letter_message(message, reason="Schema validation failed")
+
+                    if len(collected) >= max_messages:
+                        break
 
     finally:
         servicebus_client.close()
-    return None
+
+    return collected
 
 
 def publish_chunk(

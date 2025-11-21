@@ -1,6 +1,6 @@
 from pathlib import Path
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 import numpy as np
 from sklearn.cluster import KMeans
@@ -12,7 +12,7 @@ OUTPUT_DIR = Path(__file__).parent
 
 
 def create_centroids(
-    subscription_name: str = "ingestion-sub",
+    subscription_name: Optional[str] = None,
     max_messages: int = 3000,
     num_centroids: int = 30,
 ) -> Dict[str, Any]:
@@ -74,4 +74,6 @@ def create_centroids(
         "centroids_path": str(centroids_path),
         "metadata_path": str(metadata_path),
         "metadata": metadata,
+        "centroids": centroids,
+        "chunks": messages,
     }

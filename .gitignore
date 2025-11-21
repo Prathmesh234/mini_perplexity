@@ -93,6 +93,9 @@ vectors/
 *.npy
 *.pkl
 *.pickle
+services/insert_index/centroids.npy
+services/insert_index/centroids_metadata.json
+services/insert_index/vector-indexes*/
 
 # Jupyter Notebook
 .ipynb_checkpoints

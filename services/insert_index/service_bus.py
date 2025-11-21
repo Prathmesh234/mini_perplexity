@@ -23,6 +23,7 @@ def load_env_config() -> Dict[str, str]:
     config = {
         "service_bus_conn_str": os.getenv("SERVICE_BUS_CONN_STR", ""),
         "topic_name_ingestion": os.getenv("TOPIC_NAME_INGESTION", "ingestion"),
+        "subscription_name_ingestion": os.getenv("SUBSCRIPTION_NAME_INGESTION", "ingestion-sub"),
         "topic_name_output": os.getenv("TOPIC_NAME_OUTPUT", ""),
     }
 
@@ -47,7 +48,7 @@ def _deserialize_message_body(message: ServiceBusReceivedMessage) -> Optional[Di
 
 
 def receive_all_embeddings(
-    subscription_name: str = "ingestion-sub",
+    subscription_name: Optional[str] = None,
     max_messages: int = 3000,
     batch_size: int = 50,
     max_wait_time: int = 5,
@@ -61,13 +62,14 @@ def receive_all_embeddings(
         return []
 
     config = load_env_config()
+    subscription = subscription_name or config["subscription_name_ingestion"]
     servicebus_client = ServiceBusClient.from_connection_string(config["service_bus_conn_str"])
     collected: List[EmbeddingChunk] = []
 
     try:
         receiver: ServiceBusReceiver = servicebus_client.get_subscription_receiver(
             topic_name=config["topic_name_ingestion"],
-            subscription_name=subscription_name,
+            subscription_name=subscription,
             max_wait_time=max_wait_time,
         )
 

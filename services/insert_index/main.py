@@ -1,5 +1,8 @@
+import uvicorn
+
+
 def main():
-    print("Hello from insert-index!")
+    uvicorn.run("server:app", host="0.0.0.0", port=8001, reload=False)
 
 
 if __name__ == "__main__":

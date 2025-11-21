@@ -4,4 +4,14 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "azure-servicebus",
+    "azure-storage-blob",
+    "fastapi",
+    "hnswlib",
+    "numpy",
+    "pydantic",
+    "python-dotenv",
+    "scikit-learn",
+    "uvicorn",
+]

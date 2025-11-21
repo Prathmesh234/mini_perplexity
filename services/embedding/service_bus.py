@@ -47,7 +47,7 @@ def _deserialize_message_body(message: ServiceBusReceivedMessage) -> Optional[Di
 
 def get_ingestion_messages(
     subscription_name: str = "ingestion-sub",
-    max_message_count: int = 10,
+    max_message_count: int = 256,
     max_wait_time: int = 5
 ) -> List[Dict[str, Any]]:
     """

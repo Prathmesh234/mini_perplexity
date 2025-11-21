@@ -44,7 +44,7 @@ async def embed_text(request: EmbedRequest):
 
 
 @app.post("/start-embedding-process")
-async def start_embedding_process(max_messages: int = 5) -> Dict[str, Any]:
+async def start_embedding_process(max_messages: int = 256) -> Dict[str, Any]:
     """
     Trigger the embedding pipeline.
     It pulls and processes batches until the queue is empty.
@@ -138,14 +138,14 @@ async def start_embedding_process(max_messages: int = 5) -> Dict[str, Any]:
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "model": "Qwen/Qwen3-Embedding-4B"}
+    return {"status": "healthy", "model": "Qwen/Qwen3-Embedding-8B"}
 
 @app.get("/")
 async def root():
     """Root endpoint with basic info."""
     return {
         "service": "Embedding Service",
-        "model": "Qwen/Qwen3-Embedding-4B",
+        "model": "Qwen/Qwen3-Embedding-8B",
         "endpoints": {
             "embed": "POST /embed - Generate embedding for text",
             "health": "GET /health - Health check"

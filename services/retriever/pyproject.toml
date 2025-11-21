@@ -1,0 +1,18 @@
+[project]
+name = "retriever"
+version = "0.1.0"
+description = "Retriever service for vector search"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "vllm>=0.8.5",
+    "torch",
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "azure-servicebus>=7.14.3",
+    "hnswlib",
+    "azure-storage-blob",
+    "numpy",
+    "python-dotenv",
+]

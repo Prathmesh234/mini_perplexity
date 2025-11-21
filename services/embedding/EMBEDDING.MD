@@ -1,6 +1,6 @@
 # Embedding Service Guide
 
-The service exposes a FastAPI application that wraps the Qwen/Qwen3-Embedding-4B model for ad-hoc embedding generation and for the ingestion pipeline. Use the shared helpers in `service_bus.py` and the schema in `publish_schema.py` to keep ingestion payloads consistent.
+The service exposes a FastAPI application that wraps the Qwen/Qwen3-Embedding-8B model for ad-hoc embedding generation and for the ingestion pipeline. Use the shared helpers in `service_bus.py` and the schema in `publish_schema.py` to keep ingestion payloads consistent.
 
 ## Run the Server
 
@@ -46,7 +46,7 @@ curl http://localhost:8000/health
 ```json
 {
   "status": "healthy",
-  "model": "Qwen/Qwen3-Embedding-4B"
+  "model": "Qwen/Qwen3-Embedding-8B"
 }
 ```
 

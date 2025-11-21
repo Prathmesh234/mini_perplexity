@@ -3,7 +3,7 @@ from typing import List, Union
 
 def convert_embeddings(
     text_chunks: Union[str, List[str]], 
-    model_name: str = "Qwen/Qwen3-Embedding-4B"
+    model_name: str = "Qwen/Qwen3-Embedding-8B"
 ) -> torch.Tensor:
     """
     Convert text chunk(s) into embeddings using vLLM.
@@ -23,7 +23,7 @@ def convert_embeddings(
             text_chunks = [text_chunks]
         
         # Initialize model (downloads automatically on first run)
-        model = LLM(model=model_name, task="embed")
+        model = LLM(model=model_name, task="embed", max_num_seqs=512)
         
         # Generate embeddings
         outputs = model.embed(text_chunks)
@@ -40,9 +40,9 @@ def convert_embeddings(
 
 # For production: Initialize once outside function
 class EmbeddingModel:
-    def __init__(self, model_name: str = "Qwen/Qwen3-Embedding-4B"):
+    def __init__(self, model_name: str = "Qwen/Qwen3-Embedding-8B"):
         from vllm import LLM
-        self.model = LLM(model=model_name, task="embed")
+        self.model = LLM(model=model_name, task="embed", max_num_seqs=256)
     
     def embed(self, texts: Union[str, List[str]]) -> torch.Tensor:
         if isinstance(texts, str):

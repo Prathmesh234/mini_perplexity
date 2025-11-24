@@ -10,10 +10,10 @@ from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.sampling_params import SamplingParams
 import uuid
 
+from contextlib import asynccontextmanager
+
 # Load environment variables
 load_dotenv()
-
-app = FastAPI(title="LLM Service with vLLM")
 
 # Configuration
 MODEL_NAME = os.getenv("MODEL_NAME", "allenai/Olmo-3-1125-32B")
@@ -21,18 +21,31 @@ RETRIEVER_URL = os.getenv("RETRIEVER_URL", "http://localhost:8002")
 PORT = int(os.getenv("PORT", "8001"))
 HOST = os.getenv("HOST", "0.0.0.0")
 
-print(f"Initializing vLLM with model: {MODEL_NAME}")
+# Global engine variable
+engine = None
 
-# Initialize vLLM engine
-# We use AsyncLLMEngine for high throughput
-engine_args = AsyncEngineArgs(
-    model=MODEL_NAME,
-    trust_remote_code=True,  # OLMo usually requires this
-    dtype="auto",
-    gpu_memory_utilization=0.8,  # Adjust based on available GPU memory
-    max_model_len=4096,
-)
-engine = AsyncLLMEngine.from_engine_args(engine_args)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global engine
+    print(f"Initializing vLLM with model: {MODEL_NAME}")
+    
+    # Initialize vLLM engine
+    # We use AsyncLLMEngine for high throughput
+    engine_args = AsyncEngineArgs(
+        model=MODEL_NAME,
+        trust_remote_code=True,  # OLMo usually requires this
+        dtype="auto",
+        gpu_memory_utilization=0.8,  # Adjust based on available GPU memory
+        max_model_len=32768,  # Increased for H100 80GB - plenty of KV cache space
+    )
+    engine = AsyncLLMEngine.from_engine_args(engine_args)
+    
+    yield
+    
+    # Clean up if needed (vLLM usually handles cleanup on process exit)
+    print("Shutting down vLLM service")
+
+app = FastAPI(title="LLM Service with vLLM", lifespan=lifespan)
 
 class GenerateRequest(BaseModel):
     query: str
@@ -73,15 +86,26 @@ async def generate(request: GenerateRequest):
     # 2. Construct Prompt
     context_str = "\n\n".join([f"Source {i+1}: {text}" for i, text in enumerate(chunk_texts)])
     
-    prompt = f"""<|user|>
-Answer the user's query based on the provided context. If the answer is not in the context, say you don't know.
+    prompt = f"""
+You are given a context passage and a user query. Your task is to answer the query
+**strictly and exclusively** using information found in the provided context.
+
+Compliance Requirements:
+- Only answer the user’s question **directly**. No introductions, no explanations, no extra sentences.
+- If the context contains the answer, provide a concise, precise response drawn solely from the context.
+- If the answer is not fully supported by the context, reply exactly with: "I don't know."
+- Do NOT infer, assume, or use any outside knowledge.
+- Do NOT restate or reference the context, the query, or these rules in the answer.
+- Do NOT add formatting, bullet points, reasoning, or commentary.
+- Output only the final answer.
 
 Context:
 {context_str}
 
 Query:
 {request.query}
-<|assistant|>
+
+
 """
     
     # 3. Generate with vLLM

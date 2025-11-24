@@ -1,28 +1,9 @@
-# Gitignore
-node_modules
-.dist
-.env
-.DS_Store
+# Python
 __pycache__/
-*.pyc
-.env.*
-.venv
-backend/.venv*/
-frontend/node_modules/
-frontend/dist/
-
-# Model weights and cache
-models/
-*.bin
-*.safetensors
-**/transformers_cache/
-**/huggingface_cache/
-**/.cache/huggingface/
-
-# Python specific
 *.py[cod]
 *$py.class
 *.so
+.Python
 build/
 develop-eggs/
 dist/
@@ -40,89 +21,36 @@ wheels/
 *.egg
 MANIFEST
 
-# Virtual environments and package managers
-.Python
-env/
+# Virtual environments
+.venv/
 venv/
 ENV/
-env.bak/
-venv.bak/
-pnpm-lock.yaml
-package-lock.json
-yarn.lock
+env/
 
-# Testing and coverage
-.tox/
-.coverage
-.pytest_cache/
-htmlcov/
-.hypothesis/
-
-# IDEs and editors
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
+# Environment variables
+.env
+.env.local
+
 # Logs
 *.log
-logs/
 
-# Temporary files
-tmp/
-temp/
-*.tmp
+# OS
+.DS_Store
+Thumbs.db
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
+# Project specific
+/services/retriever/test_download_index.bin
+/services/retriever/debug_*.py
+/services/retriever/list_blobs.py
+/services/retriever/check_config.py
+/services/retriever/test_download.py
 
-# Azure credentials
-*.pem
-*.key
-*.crt
-
-# Service specific caches
-services/embedding/models/
-services/indexer/cache/
-cache/
-embeddings/
-vectors/
-*.npy
-*.pkl
-*.pickle
-services/insert_index/centroids.npy
-services/insert_index/centroids_metadata.json
-services/insert_index/vector-indexes*/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Process and runtime files
-*.pid
-*.lock
-.uvicorn/
-
-# Service-specific logs and data
-services/*/logs/
-services/*/data/
-services/*/cache/
-*.jsonl
-*.gz.processing
-*.processing
-
-# Azure and cloud specific
-azure-credentials/
-.azure/
-credentials.json
-service-account.json
-
-# Large dataset files
-fineweb/
-commoncrawl/
-*.wet
-*.wet.gz
-*.warc
-*.warc.gz
+# Cache (not committed, managed by cache_manager.py)
+/tmp/

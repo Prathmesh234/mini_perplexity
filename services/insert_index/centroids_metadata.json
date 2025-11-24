@@ -1,0 +1,9 @@
+{
+  "num_centroids": 30,
+  "distance_metric": "l2",
+  "shard_assignment_method": "argmin_distance",
+  "shard_prefix": "shard_",
+  "shards_path": "shards/",
+  "centroids_file": "centroids.npy",
+  "max_shard_size": 50000
+}

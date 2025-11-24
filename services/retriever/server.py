@@ -1,10 +1,20 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from schema import SearchRequest, SearchResponse
 from embedding import get_embedding_model
 from retrieval import RetrievalEngine
 import torch
 
 app = FastAPI(title="Retriever Service")
+
+# Add CORS middleware for local frontend development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In dev, allow all origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize engine
 engine = RetrievalEngine()
@@ -16,6 +26,16 @@ async def startup_event():
         engine.load_centroids()
     except Exception as e:
         print(f"Warning: Could not load centroids on startup: {e}")
+
+    # Pre-load embedding model
+    try:
+        print("Loading embedding model...")
+        get_embedding_model()
+        print("Embedding model loaded.")
+    except Exception as e:
+        print(f"Error loading embedding model: {e}")
+        # We might want to raise here if the service is useless without it
+        # raise e
 
 @app.post("/search-db", response_model=SearchResponse)
 async def search_db(request: SearchRequest):

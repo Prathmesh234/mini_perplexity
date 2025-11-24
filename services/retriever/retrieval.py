@@ -44,25 +44,40 @@ class RetrievalEngine:
         """
         Search within a specific shard.
         """
-        shard_dir = self.cache_dir / f"shard_{shard_id}"
+        shard_dir = self.cache_dir / f"shard_{shard_id:03d}"
         index_path = shard_dir / "index.bin"
         ids_path = shard_dir / "ids.json"
         
         # Download if missing
+        print(f"Checking shard {shard_id:03d} artifacts at {shard_dir}...")
         if not index_path.exists() or not ids_path.exists():
-            print(f"Downloading shard {shard_id}...")
+            print(f"Downloading shard {shard_id:03d} because index_exists={index_path.exists()}, ids_exists={ids_path.exists()}")
             download_shard_artifacts(shard_id, self.cache_dir)
+        else:
+            print(f"Shard {shard_id:03d} artifacts found locally.")
             
         if not index_path.exists():
-            print(f"Shard {shard_id} not found/empty.")
+            print(f"Shard {shard_id:03d} not found/empty after download attempt. Path: {index_path}")
             return []
+        else:
+            # Update timestamp for LRU cache eviction
+            try:
+                shard_dir.touch()
+            except Exception:
+                pass # Ignore errors here, not critical
+            # print(f"Shard {shard_id:03d} index found. Size: {index_path.stat().st_size} bytes")
 
         # Load IDs mapping
         with open(ids_path, "r") as f:
             # ids.json maps "internal_id" -> {chunk_id, doc_id, text, ...}
             # Wait, let's check the format from INDEX.MD or shards.py
-            # INDEX.MD says: "ids.json keeps the HNSW label -> chunk mapping"
-            id_map = json.load(f)
+            # ids.json keeps the HNSW label -> chunk mapping
+            # It seems to be a list of objects: [{"label": 0, ...}, {"label": 1, ...}]
+            raw_data = json.load(f)
+            if isinstance(raw_data, list):
+                id_map = {str(item["label"]): item for item in raw_data}
+            else:
+                id_map = raw_data
 
         # Load HNSW index
         # We need to know dim and space. Usually cosine or l2.
@@ -76,9 +91,21 @@ class RetrievalEngine:
         
         results = []
         for label, dist in zip(labels[0], distances[0]):
+            # Try both string and int lookup just in case
             label_str = str(label)
+            label_int = int(label)
+            
+            data = None
             if label_str in id_map:
                 data = id_map[label_str]
+            elif label_int in id_map: # In case json loaded keys as ints (unlikely for json but possible if not standard json)
+                data = id_map[label_int]
+            else:
+                # Debugging: Print first few keys to see what they look like
+                first_keys = list(id_map.keys())[:5]
+                print(f"Warning: Label {label} (type {type(label)}) not found in id_map. Keys sample: {first_keys}")
+
+            if data:
                 # data has chunk_text, chunk_id, doc_id, chunk_len
                 results.append(SearchResult(
                     chunk_id=data.get("chunk_id", "unknown"),

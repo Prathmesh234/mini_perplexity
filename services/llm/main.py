@@ -16,7 +16,7 @@ from contextlib import asynccontextmanager
 load_dotenv()
 
 # Configuration
-MODEL_NAME = os.getenv("MODEL_NAME", "allenai/Olmo-3-1125-32B")
+MODEL_NAME = os.getenv("MODEL_NAME", "openai/gpt-oss-20b")
 RETRIEVER_URL = os.getenv("RETRIEVER_URL", "http://localhost:8002")
 PORT = int(os.getenv("PORT", "8001"))
 HOST = os.getenv("HOST", "0.0.0.0")
@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
         trust_remote_code=True,  # OLMo usually requires this
         dtype="auto",
         gpu_memory_utilization=0.8,  # Adjust based on available GPU memory
-        max_model_len=32768,  # Increased for H100 80GB - plenty of KV cache space
+        max_model_len=16192,  # Reduced to fit within available KV cache memory
     )
     engine = AsyncLLMEngine.from_engine_args(engine_args)
     

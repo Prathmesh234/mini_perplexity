@@ -38,7 +38,7 @@ async def startup_event():
         # raise e
 
 @app.post("/search-db", response_model=SearchResponse)
-async def search_db(request: SearchRequest):
+def search_db(request: SearchRequest):
     try:
         # 1. Embed query
         model = get_embedding_model()

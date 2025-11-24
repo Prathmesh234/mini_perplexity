@@ -4,7 +4,7 @@ import './App.css'
 interface Message {
   role: 'user' | 'assistant'
   content: string
-  results?: Record<string, string>
+  results?: string[]  // Changed from Record to array
 }
 
 function App() {
@@ -54,14 +54,12 @@ function App() {
       }
 
       const data = await response.json()
-      
-      // Extract results (all fields except final_answer)
-      const { final_answer, ...results } = data
-      
+
+      // Extract results array and final_answer
       const assistantMessage: Message = {
         role: 'assistant',
-        content: final_answer || 'No answer received',
-        results: Object.keys(results).length > 0 ? results : undefined
+        content: data.final_answer || 'No answer received',
+        results: data.results && data.results.length > 0 ? data.results : undefined
       }
 
       setMessages(prev => [...prev, assistantMessage])
@@ -105,7 +103,7 @@ function App() {
               <div className="message-content">{message.content}</div>
             ) : (
               <div className="assistant-message">
-                {message.results && Object.keys(message.results).length > 0 && (
+                {message.results && message.results.length > 0 && (
                   <ResultsDropdown results={message.results} />
                 )}
                 <div className="message-content">{message.content}</div>
@@ -132,8 +130,8 @@ function App() {
           disabled={isLoading}
           rows={1}
         />
-        <button 
-          className="send-btn" 
+        <button
+          className="send-btn"
           onClick={handleSend}
           disabled={!inputValue.trim() || isLoading}
         >
@@ -146,7 +144,7 @@ function App() {
   )
 }
 
-function ResultsDropdown({ results }: { results: Record<string, string> }) {
+function ResultsDropdown({ results }: { results: string[] }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const truncate = (text: string, maxLength: number = 150) => {
@@ -156,30 +154,30 @@ function ResultsDropdown({ results }: { results: Record<string, string> }) {
 
   return (
     <div className="results-dropdown">
-      <button 
+      <button
         className="results-toggle"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <svg 
+        <svg
           className={`toggle-icon ${isExpanded ? 'expanded' : ''}`}
-          width="16" 
-          height="16" 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
           strokeWidth="2"
         >
           <path d="M9 18l6-6-6-6" />
         </svg>
-        <span>Sources ({Object.keys(results).length})</span>
+        <span>Sources ({results.length})</span>
       </button>
-      
+
       {isExpanded && (
         <div className="results-content">
-          {Object.entries(results).map(([key, value], index) => (
+          {results.map((result, index) => (
             <div key={index} className="result-item">
-              <span className="result-label">{key}:</span>
-              <span className="result-text">{truncate(value)}</span>
+              <span className="result-label">Source {index + 1}:</span>
+              <span className="result-text">{truncate(result)}</span>
             </div>
           ))}
         </div>

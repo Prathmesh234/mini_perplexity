@@ -15,7 +15,7 @@ app = FastAPI(title="Mini Perplexity Backend")
 # Configure CORS to allow frontend requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Frontend dev server
+    allow_origins=["*"],  # Frontend dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -79,6 +79,8 @@ def main():
         host="0.0.0.0",
         port=8000,
         reload=True,  # Auto-reload on code changes
+        reload_dirs=["."],
+        reload_excludes=[".venv"],
         log_level="info"
     )
 

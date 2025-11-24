@@ -252,3 +252,98 @@
     margin-bottom: 2rem;
   }
 }
+
+/* Side Panel Styles */
+.side-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 400px;
+  height: 100vh;
+  background-color: #111;
+  border-left: 1px solid #333;
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.side-panel-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #333;
+  background-color: #161616;
+}
+
+.side-panel-header h3 {
+  margin: 0;
+  margin-left: 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #e8e8e8;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background-color: #333;
+  color: #fff;
+}
+
+.side-panel-content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  color: #d1d1d1;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+  /* Preserve formatting */
+}
+
+/* Clickable Results */
+.result-item.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.result-item.clickable:hover {
+  background-color: #222;
+}
+
+/* Responsive adjustments for Side Panel */
+@media (max-width: 768px) {
+  .side-panel {
+    width: 100%;
+  }
+
+  .messages-container.with-panel,
+  .input-container.with-panel {
+    padding-right: 0;
+    display: none;
+    /* Hide chat on mobile when panel is open */
+  }
+}

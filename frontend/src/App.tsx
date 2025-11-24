@@ -11,6 +11,7 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedSource, setSelectedSource] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -87,6 +88,12 @@ function App() {
     setInputValue('')
   }
 
+
+
+  // ... (existing useEffects)
+
+  // ... (existing handleSend, handleKeyDown, handleNewConversation)
+
   return (
     <div className="app-container">
       <header className="app-header">
@@ -96,7 +103,7 @@ function App() {
         <h1 className="app-title">mini perplexity</h1>
       </header>
 
-      <div className="messages-container">
+      <div className={`messages-container ${selectedSource ? 'with-panel' : ''}`}>
         {messages.map((message, index) => (
           <div key={index} className={`message ${message.role}`}>
             {message.role === 'user' ? (
@@ -104,7 +111,10 @@ function App() {
             ) : (
               <div className="assistant-message">
                 {message.results && message.results.length > 0 && (
-                  <ResultsDropdown results={message.results} />
+                  <ResultsDropdown
+                    results={message.results}
+                    onSourceClick={(source) => setSelectedSource(source)}
+                  />
                 )}
                 <div className="message-content">{message.content}</div>
               </div>
@@ -119,7 +129,7 @@ function App() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="input-container">
+      <div className={`input-container ${selectedSource ? 'with-panel' : ''}`}>
         <textarea
           ref={textareaRef}
           className="message-input"
@@ -140,11 +150,18 @@ function App() {
           </svg>
         </button>
       </div>
+
+      {selectedSource && (
+        <SidePanel
+          content={selectedSource}
+          onClose={() => setSelectedSource(null)}
+        />
+      )}
     </div>
   )
 }
 
-function ResultsDropdown({ results }: { results: string[] }) {
+function ResultsDropdown({ results, onSourceClick }: { results: string[], onSourceClick: (source: string) => void }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const truncate = (text: string, maxLength: number = 150) => {
@@ -175,13 +192,35 @@ function ResultsDropdown({ results }: { results: string[] }) {
       {isExpanded && (
         <div className="results-content">
           {results.map((result, index) => (
-            <div key={index} className="result-item">
+            <div
+              key={index}
+              className="result-item clickable"
+              onClick={() => onSourceClick(result)}
+            >
               <span className="result-label">Source {index + 1}:</span>
               <span className="result-text">{truncate(result)}</span>
             </div>
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function SidePanel({ content, onClose }: { content: string, onClose: () => void }) {
+  return (
+    <div className="side-panel">
+      <div className="side-panel-header">
+        <button className="close-btn" onClick={onClose}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+        <h3>Source Content</h3>
+      </div>
+      <div className="side-panel-content">
+        {content}
+      </div>
     </div>
   )
 }

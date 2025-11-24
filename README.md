@@ -1,5 +1,23 @@
 # Mini Perplexity
 
+Object Storage based vector database + RAG solution. We used fineweb for out index dataset. 
+
+Cached (Shard has been cached in the cache_dir of the server)
+
+https://github.com/user-attachments/assets/8899e3db-37a3-46cc-a856-5c4c4bf0f287
+
+
+
+Non Cached (Fresh shard pulled from object storage)
+
+
+
+https://github.com/user-attachments/assets/4832c595-517b-4194-9741-f0286de0685c
+
+
+
+
+
 Monorepo skeleton for a Perplexity-style app.
 
 - frontend/: React + TypeScript (Vite)

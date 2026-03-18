@@ -80,3 +80,141 @@ The retriever is a FastAPI service that performs embedding, routing, and shard-l
 5. **Cache hygiene** (`cache_manager.py`) – A lightweight subprocess deletes the least recently used shard directories when cache size exceeds the configured cap (default 2GB).
 
 This separation lets writers stream new shards into object storage while the retriever downloads only what it needs for live queries.
+
+## Quick Start - Replicate This Project
+
+### Prerequisites
+
+1. **Azure account** with:
+   - A [Storage Account](https://learn.microsoft.com/en-us/azure/storage/common/storage-account-create)
+   - A [Service Bus namespace](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-quickstart-portal) with a topic called `ingestion`
+2. **GPU machine** (for embedding + retriever) - rent from any cloud provider (Azure, Lambda Labs, RunPod, etc.)
+   - Minimum: 1x NVIDIA GPU with 16GB+ VRAM
+   - Recommended: 2x GPUs (one for embedding, one for retriever)
+3. **Local tools**: Python 3.10+, [uv](https://docs.astral.sh/uv/), Node.js 18+, [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
+
+### One-Command Setup
+
+Once you have the prerequisites above, everything else is handled by the launch script:
+
+```bash
+# Clone the repo
+git clone https://github.com/Prathmesh234/mini_perplexity.git
+cd mini_perplexity
+
+# Run the launch script - it will:
+#   1. Check that Python, uv, Node, etc. are installed
+#   2. Prompt you for Azure credentials
+#   3. Create Azure Blob Storage containers + folder structure
+#   4. Generate .env files for all services
+#   5. Install all dependencies (Python + Node)
+#   6. Start all services
+./scripts/launch.sh
+```
+
+That's it. The script is interactive and will walk you through everything.
+
+### What You'll Need From Azure Portal
+
+Before running the launch script, grab these from the Azure Portal:
+
+| Credential | Where to find it |
+|---|---|
+| **Storage Account name** | Storage account → Overview → "Storage account name" |
+| **Storage Connection String** | Storage account → Access keys → "Connection string" |
+| **Service Bus Connection String** | Service Bus namespace → Shared access policies → RootManageSharedAccessKey → "Primary Connection String" |
+
+### Manual Setup (Step by Step)
+
+If you prefer to set things up manually instead of using the launch script:
+
+**1. Initialize Azure Blob Storage**
+
+```bash
+# Login to Azure CLI
+az login
+
+# Create containers and folder structure
+./scripts/init_azure_blob.sh <your_storage_account_name>
+```
+
+This creates three containers (`vectorindexes`, `fineweb-raw`, `commoncrawl-wet`) and the vector index folder structure inside `vectorindexes`.
+
+**2. Configure environment files**
+
+Copy each `.env.example` to `.env` and fill in your credentials:
+
+```bash
+# Required for retriever + insert_index
+cp services/retriever/.env.example services/retriever/.env
+cp services/insert_index/.env.example services/insert_index/.env
+
+# Required for data pipeline (indexer + embedding)
+cp services/indexer/.env.example services/indexer/.env
+cp services/embedding/.env.example services/embedding/.env
+```
+
+**3. Install dependencies**
+
+```bash
+# Python services (run in each service directory)
+cd services/retriever && uv sync && cd ../..
+cd services/insert_index && uv sync && cd ../..
+cd services/embedding && uv sync && cd ../..
+cd services/indexer && uv sync && cd ../..
+cd backend && uv sync && cd ..
+cd data && uv sync && cd ..
+
+# Frontend
+cd frontend && npm install && cd ..
+```
+
+**4. Start services**
+
+```bash
+# Terminal 1 - Backend API (port 8000)
+cd backend && uv run python main.py
+
+# Terminal 2 - Insert Index (port 8001)
+cd services/insert_index && uv run uvicorn server:app --host 0.0.0.0 --port 8001
+
+# Terminal 3 - Retriever (port 8002)
+cd services/retriever && uv run python server.py
+
+# Terminal 4 - Frontend (port 5173)
+cd frontend && npm run dev
+```
+
+### Azure Blob Storage Structure
+
+The init script creates this structure in your storage account:
+
+```
+Storage Account
+├── vectorindexes/                          # Vector index container
+│   └── vector-indexes-client1/             # Client prefix
+│       ├── centroids.npy                   # K-means cluster centers
+│       ├── metadata.json                   # Root metadata
+│       └── shards/                         # Per-centroid HNSW shards
+│           ├── shard_000/
+│           │   ├── index.bin               # HNSW graph
+│           │   ├── vectors.npy             # Float32 embeddings
+│           │   ├── ids.json                # Label → chunk text mapping
+│           │   └── meta.json               # Shard parameters
+│           ├── shard_001/
+│           └── ... (up to shard_029)
+├── fineweb-raw/                            # FineWeb dataset
+│   └── fineweb/train/
+│       ├── fineweb-train-00000.jsonl.gz
+│       └── ...
+└── commoncrawl-wet/                        # CommonCrawl data (optional)
+```
+
+### Service Ports
+
+| Service | Port | Description |
+|---|---|---|
+| Backend | 8000 | FastAPI orchestrator |
+| Insert Index | 8001 | Index builder (centroids + HNSW shards) |
+| Retriever | 8002 | Query embedding + ANN search |
+| Frontend | 5173 | React UI |
